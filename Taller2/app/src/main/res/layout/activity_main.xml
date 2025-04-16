@@ -26,6 +26,7 @@
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:layout_margin="16dp"
+        android:scaleType="fitXY"
         android:src="@drawable/ic_camara"
         android:background="@android:color/transparent"
         android:contentDescription="Botón de imagen" />
@@ -36,6 +37,7 @@
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:layout_margin="16dp"
+        android:scaleType="fitXY"
         android:src="@drawable/ic_mapa"
         android:background="@android:color/transparent"
         android:contentDescription="Botón de mapa" />
