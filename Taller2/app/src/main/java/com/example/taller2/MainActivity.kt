@@ -25,5 +25,12 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ImagePickerActivity::class.java)
             startActivity(intent)
         }
+
+        // Botón para mapa (OpenStreetMap)
+        val btnMapa: ImageButton = findViewById(R.id.btnMapa)
+        btnMapa.setOnClickListener {
+            val intent = Intent(this, OSMMapsActivity::class.java)
+            startActivity(intent)
+        }
     }
 }

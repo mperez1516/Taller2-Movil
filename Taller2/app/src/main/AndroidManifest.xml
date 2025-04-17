@@ -2,15 +2,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- PERMISOs -->
+    <!-- PERMISOS -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- Permisos existentes -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- Permiso WRITE_EXTERNAL_STORAGE solo una vez con maxSdkVersion -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- Nuevos permisos para OSM y ubicación -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -22,6 +32,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Taller2"
         tools:targetApi="31">
+
+        <!-- Configuración específica de OSM -->
+        <meta-data
+            android:name="org.osmdroid.config.USER_AGENT"
+            android:value="${applicationId}" />
+
+        <activity
+            android:name=".OSMMapsActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -44,9 +63,6 @@
 
         <!-- ACTIVIDAD DE CONTACTOS -->
         <activity android:name=".ContactosActivity" />
-
         <activity android:name=".ImagePickerActivity" />
-
     </application>
-
 </manifest>
