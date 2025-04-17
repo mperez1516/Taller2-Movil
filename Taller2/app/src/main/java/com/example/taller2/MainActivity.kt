@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Botón para imágenes (nuevo código)
+        // Botón para imágenes 
         val btnImagenes: ImageButton = findViewById(R.id.btnImagen)
         btnImagenes.setOnClickListener {
             val intent = Intent(this, ImagePickerActivity::class.java)
