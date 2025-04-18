@@ -47,6 +47,8 @@ dependencies {
     implementation("androidx.activity:activity:1.10.1")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation ("org.osmdroid:osmdroid-android:6.1.14")
+    implementation ("com.google.code.gson:gson:2.10.1")
+    implementation ("androidx.core:core-ktx:1.12.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
