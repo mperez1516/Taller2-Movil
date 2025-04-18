@@ -5,21 +5,28 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Environment
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
+import org.json.JSONArray
+import org.json.JSONObject
 import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapController
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.TilesOverlay
+import java.io.File
+import java.io.FileWriter
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 class OSMMapsActivity : AppCompatActivity() {
     private lateinit var mapView: MapView
@@ -32,26 +39,7 @@ class OSMMapsActivity : AppCompatActivity() {
         Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
 
-    private lateinit var sensorManager: SensorManager
-    private var lightSensor: Sensor? = null
-    private val lightThreshold = 20000.0f
-
-    private val lightSensorListener = object : SensorEventListener {
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-
-        override fun onSensorChanged(event: SensorEvent?) {
-            event?.let {
-                val lightValue = it.values[0]
-                if (lightValue < lightThreshold) {
-                    Toast.makeText(
-                        this@OSMMapsActivity,
-                        "Luminosidad baja detectada: $lightValue lx",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
+    private var lastRecordedPoint: GeoPoint? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,18 +50,97 @@ class OSMMapsActivity : AppCompatActivity() {
         mapView = findViewById(R.id.osmMap)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
-
         mapController = mapView.controller as MapController
         mapController.setZoom(18.0)
         mapController.setCenter(startPoint)
 
         checkAndRequestPermissions()
 
-        // Sensor de luz
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
-        if (lightSensor == null) {
-            Toast.makeText(this, "Sensor de luz no disponible", Toast.LENGTH_SHORT).show()
+        val startMarker = Marker(mapView)
+        startMarker.position = startPoint
+        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        startMarker.icon = ContextCompat.getDrawable(this, R.drawable.ic_start_marker)
+        startMarker.title = "Inicio - Santafé"
+        mapView.overlays.add(startMarker)
+
+        val mapEventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
+            override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                p?.let {
+                    handleUserClick(it)
+                }
+                return true
+            }
+
+            override fun longPressHelper(p: GeoPoint?): Boolean {
+                return false
+            }
+        })
+        mapView.overlays.add(mapEventsOverlay)
+    }
+
+    private fun handleUserClick(newPoint: GeoPoint) {
+        val marker = Marker(mapView)
+        marker.position = newPoint
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        marker.icon = ContextCompat.getDrawable(this, R.drawable.ic_click_marker)
+        marker.title = "Nueva ubicación"
+        mapView.overlays.add(marker)
+        mapView.invalidate()
+
+        mapController.animateTo(newPoint)
+
+        lastRecordedPoint?.let {
+            val distance = it.distanceToAsDouble(newPoint)
+            if (distance > 30.0 && (it.latitude != newPoint.latitude || it.longitude != newPoint.longitude)) {
+                saveLocationToJson(newPoint)
+                lastRecordedPoint = newPoint
+            }
+        } ?: run {
+            saveLocationToJson(newPoint)
+            lastRecordedPoint = newPoint
+        }
+    }
+
+    private fun saveLocationToJson(point: GeoPoint) {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val currentTime = sdf.format(Date())
+
+        val newEntry = JSONObject().apply {
+            put("latitud", point.latitude)
+            put("longitud", point.longitude)
+            put("fecha_hora", currentTime)
+        }
+
+        val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        val file = File(dir, "ubicaciones.json")
+
+        val jsonArray: JSONArray = if (file.exists()) {
+            try {
+                JSONArray(file.readText())
+            } catch (e: Exception) {
+                JSONArray()
+            }
+        } else {
+            JSONArray()
+        }
+
+        jsonArray.put(newEntry)
+
+        try {
+            val writer = FileWriter(file)
+            writer.write(jsonArray.toString(4)) // formato indentado
+            writer.close()
+            Toast.makeText(this, "Ubicación guardada en:\n${file.absolutePath}", Toast.LENGTH_SHORT).show()
+
+            // Mostrar contenido en AlertDialog
+            AlertDialog.Builder(this)
+                .setTitle("Contenido del archivo JSON")
+                .setMessage(jsonArray.toString(4))
+                .setPositiveButton("Cerrar", null)
+                .show()
+
+        } catch (e: IOException) {
+            Toast.makeText(this, "Error al guardar ubicación", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -130,12 +197,6 @@ class OSMMapsActivity : AppCompatActivity() {
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 setupMapWithLocation()
-            } else {
-                Toast.makeText(
-                    this,
-                    "Algunos permisos fueron denegados, la funcionalidad puede estar limitada",
-                    Toast.LENGTH_LONG
-                ).show()
             }
         }
     }
@@ -144,28 +205,20 @@ class OSMMapsActivity : AppCompatActivity() {
         super.onResume()
         mapView.onResume()
 
-        // Controlador del mapa
         val controller = mapView.controller
         controller.setZoom(18.0)
         controller.setCenter(startPoint)
 
-        // Modo oscuro: invertir colores si es necesario
         val uiManager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
         if (uiManager.nightMode == UiModeManager.MODE_NIGHT_YES) {
             mapView.overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
         } else {
             mapView.overlayManager.tilesOverlay.setColorFilter(null)
         }
-
-        // Registrar sensor
-        lightSensor?.let {
-            sensorManager.registerListener(lightSensorListener, it, SensorManager.SENSOR_DELAY_NORMAL)
-        }
     }
 
     override fun onPause() {
         super.onPause()
         mapView.onPause()
-        sensorManager.unregisterListener(lightSensorListener)
     }
 }

@@ -49,6 +49,7 @@ dependencies {
     implementation ("org.osmdroid:osmdroid-android:6.1.14")
     implementation ("com.google.code.gson:gson:2.10.1")
     implementation ("androidx.core:core-ktx:1.12.0")
+    implementation ("org.osmdroid:osmdroid-mapsforge:6.1.11")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
