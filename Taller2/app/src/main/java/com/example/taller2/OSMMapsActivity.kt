@@ -19,6 +19,7 @@ import android.os.Environment
 import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -55,6 +56,7 @@ class OSMMapsActivity : AppCompatActivity(), SensorEventListener {
     //Para la ubicacion actual
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var geocoder: Geocoder
+    private lateinit var btnSearch: Button
 
     //Para permisos
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
@@ -95,7 +97,7 @@ class OSMMapsActivity : AppCompatActivity(), SensorEventListener {
         mapView = findViewById(R.id.osmMap)
         mapController = mapView.controller as org.osmdroid.views.MapController
         editTextAddress = findViewById(R.id.editTextAddress)
-
+        btnSearch = findViewById(R.id.btnSearch)
 
         //Inicializar Geocoder
         geocoder = Geocoder(this, Locale.getDefault())
@@ -133,6 +135,18 @@ class OSMMapsActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun setupSearchBar(){
+
+        // Listener para el botón de búsqueda
+        btnSearch.setOnClickListener {
+            val address = editTextAddress.text.toString().trim()
+            if (address.isNotEmpty()) {
+                searchAddress(address)
+                hideKeyboard(editTextAddress)
+            } else {
+                Toast.makeText(this, "Ingrese una dirección", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         editTextAddress.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
                 val address = v.text.toString().trim()
@@ -151,6 +165,18 @@ class OSMMapsActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun searchAddress(addressString: String){
+        // Mostrar progreso
+        btnSearch.isEnabled = false
+        btnSearch.text = "Buscando..."
+        editTextAddress.isEnabled = false
+
+        if (!Geocoder.isPresent()) {
+            Toast.makeText(this, "Geocoder no disponible", Toast.LENGTH_SHORT).show()
+            resetSearchUI()
+            return
+        }
+
+
         if (!Geocoder.isPresent()) {
             Toast.makeText(this, "Geocoder no disponible", Toast.LENGTH_SHORT).show()
             return
@@ -189,6 +215,13 @@ class OSMMapsActivity : AppCompatActivity(), SensorEventListener {
         } catch (e: Exception) {
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+        resetSearchUI()
+    }
+
+    private fun resetSearchUI() {
+        btnSearch.isEnabled = true
+        btnSearch.text = "Buscar"
+        editTextAddress.isEnabled = true
     }
 
     private fun handleGeocodeResult(addresses: List<Address>, originalQuery: String){
