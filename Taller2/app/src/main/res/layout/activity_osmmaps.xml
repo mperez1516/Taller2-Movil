@@ -1,24 +1,39 @@
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/mapContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/editTextAddress"
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Ingrese una dirección"
-        android:inputType="textPostalAddress"
-        android:imeOptions="actionDone"
-        android:layout_gravity="top"
-        android:background="#80FFFFFF"
-        android:padding="8dp"
-        android:layout_margin="8dp"/>
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <EditText
+            android:id="@+id/editTextAddress"
+            android:layout_width="328dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Ingrese una dirección"
+            android:imeOptions="actionSearch"
+            android:inputType="textCapWords|textAutoComplete"
+            android:maxLines="1" />
+
+        <Button
+            android:id="@+id/btnSearch"
+            android:layout_width="78dp"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="Buscar" />
+    </LinearLayout>
 
     <org.osmdroid.views.MapView
         android:id="@+id/osmMap"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-</FrameLayout>
+</LinearLayout>
